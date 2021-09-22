@@ -1,0 +1,74 @@
+#Importing section
+import cv2
+import mediapipe as mp
+import time
+import mouse
+import uuid
+import os
+import math
+from time import sleep
+
+#Video capture and resolution config
+cap = cv2.VideoCapture(0)
+cap.set(3, 1280)
+cap.set(4, 720)
+
+#Hand detection using mediapipe library
+mpHands = mp.solutions.hands
+hands = mpHands.Hands()
+mpDraw = mp.solutions.drawing_utils
+
+#Processing section
+while True:
+
+    #Capture and save the frames in succes and img
+    success, img = cap.read()
+
+    #Image processing and color correction
+    imgRGB = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    results = hands.process(imgRGB)
+    
+    #Save the hand detection in res using multihandlandmarks
+    res = results.multi_hand_landmarks
+    
+    #Test the existence of hand for starting the program
+    if type(res) == list:
+    
+        #Set the x and y for the point num 0 in the hand
+        x = res[0].landmark[0].x 
+        y = res[0].landmark[0].y
+  
+        #Set the x1,x2 and y1,y2 for the two points 8 and 12 for 2 fingers
+        x1 = res[0].landmark[8].x*1280
+        x2 = res[0].landmark[12].x*1280
+        y1 = res[0].landmark[8].y*720
+        y2 = res[0].landmark[12].y*720
+
+        #A math formular for calculating the distance between 2 fingers points
+        d = math.sqrt(abs((x2-x1)**2+(y2-y1)**2))
+        
+        #Set the two coordinates for the resolution of monitor
+        x_coordinate = x * 1920
+        y_coordinate = y * 1080
+ 
+        #Move the mouse to this coordinates with 0.07sec delay for smothness and this part need more coding :)
+        mouse.move(x_coordinate,y_coordinate, absolute=True, duration=0.07)
+        
+        #If the distance between the selected fingers less than 40 the left button in the mouse clicked and wait 0.1sec for stop spaming the click
+        if d < 40:
+            mouse.press(button='left')
+            sleep(0.1)
+        
+        #If the distance more than 40 than the button will be released for more flexibitie until i fix this part ;)
+        else:
+            mouse.release(button='left')
+
+        #Print the distance 'd' just to check the distance
+        print(d)
+    #Print the hands points and color them to show the hand forme
+    if results.multi_hand_landmarks:
+        for handlms in results.multi_hand_landmarks:
+            mpDraw.draw_landmarks(img, handlms, mpHands.HAND_CONNECTIONS)        
+    cv2.imshow("Image", img)
+    cv2.waitKey(1)
+    
